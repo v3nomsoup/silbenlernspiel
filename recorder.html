@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silbenteppich - Aufnahme-Tool</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f0f4ff;
+            color: #2d3436;
+            min-height: 100vh;
+            padding-bottom: 220px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+        .header p { opacity: 0.9; font-size: 0.9rem; }
+        .total-progress {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 0.8rem 1rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.5rem 0.8rem;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab:hover { border-color: #a29bfe; }
+        .tab.active { background: #6c5ce7; color: #fff; border-color: #6c5ce7; }
+        .tab .tab-count { display: block; font-size: 0.75rem; font-weight: 400; margin-top: 2px; }
+        .tab.active .tab-count { opacity: 0.85; }
+
+        /* Item Grid */
+        .items-container {
+            padding: 1rem;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+        }
+        .item-btn {
+            padding: 0.6rem 0.4rem;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.15s;
+            position: relative;
+        }
+        .item-btn:hover { border-color: #a29bfe; transform: translateY(-1px); }
+        .item-btn.recorded { border-color: #00b894; background: #f0fff4; }
+        .item-btn.recorded::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 5px;
+            font-size: 0.7rem;
+            color: #00b894;
+            font-weight: 700;
+        }
+        .item-btn.active { border-color: #6c5ce7; background: #f0edff; box-shadow: 0 0 0 3px rgba(108,92,231,0.2); }
+
+        /* Word items: bigger, show syllables */
+        .word-item {
+            grid-column: span 2;
+            padding: 0.8rem;
+        }
+        .word-item .word-text { font-size: 1.2rem; }
+        .word-syllables {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .syl-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: #dfe6e9;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .syl-badge:hover { background: #b2bec3; }
+        .syl-badge.recorded { background: #55efc4; color: #2d3436; }
+        .syl-badge.active { background: #6c5ce7; color: #fff; }
+
+        /* Recording Panel */
+        .rec-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            padding: 1rem 1.5rem 1.5rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            z-index: 20;
+        }
+        .rec-panel.open { transform: translateY(0); }
+
+        .rec-current {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #6c5ce7;
+            margin-bottom: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        .rec-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rec-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .rec-btn:hover { transform: scale(1.1); }
+        .rec-btn:active { transform: scale(0.95); }
+        .rec-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+
+        .btn-record {
+            background: #e17055;
+            color: #fff;
+            width: 72px;
+            height: 72px;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 15px rgba(225,112,85,0.4);
+        }
+        .btn-record.recording {
+            background: #d63031;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        .btn-play { background: #00b894; color: #fff; }
+        .btn-delete { background: #dfe6e9; color: #636e72; }
+        .btn-next { background: #6c5ce7; color: #fff; }
+
+        .rec-hint {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #636e72;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(214,48,49,0.5); }
+            50% { box-shadow: 0 0 0 15px rgba(214,48,49,0); }
+        }
+
+        /* Keyboard shortcut hint */
+        .shortcut { font-size: 0.7rem; color: #b2bec3; display: block; margin-top: 2px; }
+
+        @media (max-width: 600px) {
+            .items-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+            .word-item { grid-column: span 2; }
+            .rec-current { font-size: 2rem; }
+            .tab { min-width: 80px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Aufnahme-Tool</h1>
+        <p>Silben und Wörter einsprechen</p>
+        <div class="total-progress" id="total-progress"></div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div class="items-container">
+        <div class="items-grid" id="items-grid"></div>
+    </div>
+
+    <div class="rec-panel" id="rec-panel">
+        <div class="rec-current" id="rec-current"></div>
+        <div class="rec-buttons">
+            <button class="rec-btn btn-play" id="btn-play" title="Abspielen" disabled>&#9654;</button>
+            <button class="rec-btn btn-record" id="btn-record" title="Aufnehmen">&#9679;</button>
+            <button class="rec-btn btn-delete" id="btn-delete" title="Löschen" disabled>&#128465;</button>
+            <button class="rec-btn btn-next" id="btn-next" title="Weiter">&#9654;&#9654;</button>
+        </div>
+        <div class="rec-hint">
+            <span class="shortcut">Leertaste = Aufnahme starten/stoppen | &rarr; = Weiter | Entf = Löschen</span>
+        </div>
+    </div>
+
+    <script src="js/syllables.js"></script>
+    <script src="js/audiostore.js"></script>
+    <script>
+    (async () => {
+        await AudioStore.init();
+
+        // Build categories from SYLLABLE_DATA
+        const categories = [
+            {
+                id: 'open',
+                name: 'Offene Silben',
+                items: SYLLABLE_DATA.openSyllables.map(s => ({ key: s, display: s, type: 'syllable' })),
+            },
+            {
+                id: 'closed',
+                name: 'Geschlossene Silben',
+                items: SYLLABLE_DATA.closedSyllables.map(s => ({ key: s, display: s, type: 'syllable' })),
+            },
+            {
+                id: 'wordsEasy',
+                name: 'Einfache Wörter',
+                items: buildWordItems(SYLLABLE_DATA.twoSyllableWordsEasy),
+            },
+            {
+                id: 'wordsHard',
+                name: 'Schwierige Wörter',
+                items: buildWordItems(SYLLABLE_DATA.twoSyllableWordsHard),
+            },
+            {
+                id: 'wordsLong',
+                name: 'Lange Wörter',
+                items: buildWordItems(SYLLABLE_DATA.threeSyllableWords),
+            },
+        ];
+
+        function buildWordItems(wordList) {
+            const items = [];
+            for (const w of wordList) {
+                // The whole word
+                items.push({ key: w.word, display: w.word, type: 'word', syllables: w.syllables });
+                // Individual syllables (only if unique within this list)
+                for (const syl of w.syllables) {
+                    if (!items.some(it => it.key.toLowerCase() === syl.toLowerCase() && it.type === 'syllable')) {
+                        items.push({ key: syl, display: syl, type: 'syllable' });
+                    }
+                }
+            }
+            return items;
+        }
+
+        let activeCategory = 0;
+        let activeItemKey = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordedKeys = new Set();
+
+        const tabsEl = document.getElementById('tabs');
+        const gridEl = document.getElementById('items-grid');
+        const panelEl = document.getElementById('rec-panel');
+        const currentEl = document.getElementById('rec-current');
+        const btnRecord = document.getElementById('btn-record');
+        const btnPlay = document.getElementById('btn-play');
+        const btnDelete = document.getElementById('btn-delete');
+        const btnNext = document.getElementById('btn-next');
+        const totalProgressEl = document.getElementById('total-progress');
+
+        // Load existing keys
+        recordedKeys = await AudioStore.getAllKeys();
+
+        // Render tabs
+        function renderTabs() {
+            tabsEl.innerHTML = '';
+            categories.forEach((cat, i) => {
+                const tab = document.createElement('button');
+                tab.className = 'tab' + (i === activeCategory ? ' active' : '');
+                const allKeys = getUniqueKeys(cat);
+                const recorded = allKeys.filter(k => recordedKeys.has(k.toLowerCase())).length;
+                tab.innerHTML = `${cat.name}<span class="tab-count">${recorded}/${allKeys.length}</span>`;
+                tab.addEventListener('click', () => {
+                    activeCategory = i;
+                    activeItemKey = null;
+                    panelEl.classList.remove('open');
+                    renderTabs();
+                    renderItems();
+                });
+                tabsEl.appendChild(tab);
+            });
+            updateTotalProgress();
+        }
+
+        function getUniqueKeys(cat) {
+            const keys = new Set();
+            for (const item of cat.items) {
+                keys.add(item.key.toLowerCase());
+            }
+            return [...keys];
+        }
+
+        function getAllUniqueKeys() {
+            const keys = new Set();
+            for (const cat of categories) {
+                for (const item of cat.items) {
+                    keys.add(item.key.toLowerCase());
+                }
+            }
+            return keys;
+        }
+
+        function updateTotalProgress() {
+            const all = getAllUniqueKeys();
+            const recorded = [...all].filter(k => recordedKeys.has(k)).length;
+            totalProgressEl.textContent = `Gesamt: ${recorded}/${all.size} aufgenommen`;
+        }
+
+        // Render items
+        function renderItems() {
+            gridEl.innerHTML = '';
+            const cat = categories[activeCategory];
+
+            for (const item of cat.items) {
+                if (item.type === 'word') {
+                    renderWordItem(item);
+                } else {
+                    renderSyllableItem(item);
+                }
+            }
+        }
+
+        function renderSyllableItem(item) {
+            const btn = document.createElement('button');
+            btn.className = 'item-btn';
+            if (recordedKeys.has(item.key.toLowerCase())) btn.classList.add('recorded');
+            if (activeItemKey === item.key) btn.classList.add('active');
+            btn.textContent = item.display;
+            btn.addEventListener('click', () => selectItem(item.key, item.display));
+            gridEl.appendChild(btn);
+        }
+
+        function renderWordItem(item) {
+            const div = document.createElement('div');
+            div.className = 'item-btn word-item';
+            if (recordedKeys.has(item.key.toLowerCase())) div.classList.add('recorded');
+            if (activeItemKey === item.key) div.classList.add('active');
+
+            const wordText = document.createElement('div');
+            wordText.className = 'word-text';
+            wordText.textContent = item.display;
+            wordText.style.cursor = 'pointer';
+            wordText.addEventListener('click', () => selectItem(item.key, item.display));
+            div.appendChild(wordText);
+
+            const sylDiv = document.createElement('div');
+            sylDiv.className = 'word-syllables';
+            for (const syl of item.syllables) {
+                const badge = document.createElement('span');
+                badge.className = 'syl-badge';
+                if (recordedKeys.has(syl.toLowerCase())) badge.classList.add('recorded');
+                if (activeItemKey === syl) badge.classList.add('active');
+                badge.textContent = syl;
+                badge.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectItem(syl, syl);
+                });
+                sylDiv.appendChild(badge);
+            }
+            div.appendChild(sylDiv);
+
+            gridEl.appendChild(div);
+        }
+
+        function selectItem(key, display) {
+            activeItemKey = key;
+            currentEl.textContent = display;
+            panelEl.classList.add('open');
+            const isRec = recordedKeys.has(key.toLowerCase());
+            btnPlay.disabled = !isRec;
+            btnDelete.disabled = !isRec;
+            renderItems();
+        }
+
+        // Recording
+        btnRecord.addEventListener('click', toggleRecording);
+
+        async function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            if (!activeItemKey) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                mediaRecorder.onstop = async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+                    await AudioStore.save(activeItemKey, blob);
+                    recordedKeys.add(activeItemKey.toLowerCase());
+                    btnPlay.disabled = false;
+                    btnDelete.disabled = false;
+                    renderTabs();
+                    renderItems();
+                };
+                mediaRecorder.start();
+                isRecording = true;
+                btnRecord.classList.add('recording');
+                btnRecord.innerHTML = '&#9632;'; // Stop symbol
+            } catch (err) {
+                alert('Mikrofon-Zugriff nicht möglich: ' + err.message);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            btnRecord.classList.remove('recording');
+            btnRecord.innerHTML = '&#9679;'; // Record symbol
+        }
+
+        // Playback
+        btnPlay.addEventListener('click', async () => {
+            if (!activeItemKey) return;
+            btnPlay.disabled = true;
+            await AudioStore.play(activeItemKey);
+            btnPlay.disabled = false;
+        });
+
+        // Delete
+        btnDelete.addEventListener('click', async () => {
+            if (!activeItemKey) return;
+            await AudioStore.remove(activeItemKey);
+            recordedKeys.delete(activeItemKey.toLowerCase());
+            btnPlay.disabled = true;
+            btnDelete.disabled = true;
+            renderTabs();
+            renderItems();
+        });
+
+        // Next unrecorded
+        btnNext.addEventListener('click', goNext);
+
+        function goNext() {
+            const cat = categories[activeCategory];
+            const allItems = cat.items;
+
+            // Find current index
+            let currentIdx = allItems.findIndex(it => it.key === activeItemKey);
+            if (currentIdx === -1) currentIdx = -1;
+
+            // Search forward for next unrecorded
+            for (let i = 1; i <= allItems.length; i++) {
+                const idx = (currentIdx + i) % allItems.length;
+                const item = allItems[idx];
+                if (!recordedKeys.has(item.key.toLowerCase())) {
+                    selectItem(item.key, item.display);
+                    // Scroll into view
+                    const el = gridEl.children[idx];
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+            }
+
+            // All recorded in this category — try next category
+            for (let c = 1; c <= categories.length; c++) {
+                const nextCat = (activeCategory + c) % categories.length;
+                const nextItems = categories[nextCat].items;
+                const unrecorded = nextItems.find(it => !recordedKeys.has(it.key.toLowerCase()));
+                if (unrecorded) {
+                    activeCategory = nextCat;
+                    renderTabs();
+                    renderItems();
+                    selectItem(unrecorded.key, unrecorded.display);
+                    return;
+                }
+            }
+
+            alert('Alles aufgenommen! 🎉');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleRecording();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                goNext();
+            } else if (e.code === 'Delete' || e.code === 'Backspace') {
+                if (activeItemKey && !isRecording) {
+                    e.preventDefault();
+                    btnDelete.click();
+                }
+            }
+        });
+
+        // Initial render
+        renderTabs();
+        renderItems();
+    })();
+    </script>
+</body>
+</html>

@@ -1,15 +1,29 @@
 /* ============================================
    Web Speech API - Sprachausgabe
+   Mit Fallback: eigene Aufnahmen > synthetische Stimme
    ============================================ */
 
 const Speech = (() => {
     let germanVoice = null;
     let ready = false;
+    let audioStoreReady = false;
 
-    function init() {
+    async function init() {
+        // Init AudioStore (custom recordings)
+        if (typeof AudioStore !== 'undefined') {
+            try {
+                await AudioStore.init();
+                audioStoreReady = true;
+            } catch (e) {
+                console.warn('AudioStore init fehlgeschlagen:', e);
+            }
+        }
+
+        // Init Web Speech API
         return new Promise((resolve) => {
             if (!window.speechSynthesis) {
                 console.warn('Speech Synthesis nicht verfügbar');
+                ready = true;
                 resolve(false);
                 return;
             }
@@ -59,6 +73,16 @@ const Speech = (() => {
         });
     }
 
+    // Try to play a custom recording. Returns true if played, false if not available.
+    async function _playCustom(text) {
+        if (!audioStoreReady) return false;
+        try {
+            return await AudioStore.play(text);
+        } catch (e) {
+            return false;
+        }
+    }
+
     function _createUtterance(text, rate) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'de-DE';
@@ -71,8 +95,8 @@ const Speech = (() => {
         return utterance;
     }
 
-    // Speak text, cancelling anything currently playing
-    function speak(text, rate = 0.85) {
+    // Speak text using synth, cancelling anything currently playing
+    function _speakSynth(text, rate = 0.85) {
         return new Promise((resolve) => {
             if (!window.speechSynthesis) { resolve(); return; }
             speechSynthesis.cancel();
@@ -83,6 +107,12 @@ const Speech = (() => {
                 speechSynthesis.speak(utt);
             }, 50);
         });
+    }
+
+    // Speak text: custom recording first, fallback to synth
+    async function speak(text, rate = 0.85) {
+        if (await _playCustom(text)) return;
+        return _speakSynth(text, rate);
     }
 
     // Wait for any current speech to finish, then speak
@@ -98,7 +128,6 @@ const Speech = (() => {
             }
 
             if (speechSynthesis.speaking) {
-                // Poll until current speech is done
                 const check = setInterval(() => {
                     if (!speechSynthesis.speaking) {
                         clearInterval(check);
@@ -117,24 +146,32 @@ const Speech = (() => {
         }
     }
 
-    function speakSyllable(syllable) {
-        return speak(syllable, 0.75);
+    async function speakSyllable(syllable) {
+        if (await _playCustom(syllable)) return;
+        return _speakSynth(syllable, 0.75);
     }
 
-    function speakWord(word) {
-        return speak(word, 0.7);
+    async function speakWord(word) {
+        if (await _playCustom(word)) return;
+        return _speakSynth(word, 0.7);
     }
 
     async function speakWordWithSyllables(word, syllables) {
-        await speak(word, 0.7);
+        // Play whole word
+        if (!(await _playCustom(word))) {
+            await _speakSynth(word, 0.7);
+        }
         await new Promise(r => setTimeout(r, 500));
+        // Play each syllable
         for (const syl of syllables) {
-            await speakAfterCurrent(syl, 0.65);
+            if (!(await _playCustom(syl))) {
+                await speakAfterCurrent(syl, 0.65);
+            }
             await new Promise(r => setTimeout(r, 300));
         }
     }
 
-    // Speak feedback - waits for current syllable speech to finish first
+    // Speak feedback - always synthetic (not recorded)
     function speakFeedback(text) {
         return speakAfterCurrent(text, 0.95);
     }
