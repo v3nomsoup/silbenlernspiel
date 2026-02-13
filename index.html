@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silbenteppich - Lernspiel</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <div class="start-container">
+            <h1 class="game-title">Silbenteppich</h1>
+            <p class="game-subtitle">Finde die richtige Silbe!</p>
+            <div class="start-buttons">
+                <button id="btn-start" class="btn btn-primary btn-large">Spiel starten</button>
+                <button id="btn-continue" class="btn btn-secondary btn-large" style="display:none;">Weiterspielen</button>
+            </div>
+            <div id="start-stats" class="start-stats" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <!-- Header Bar -->
+        <header class="game-header">
+            <div class="header-left">
+                <span class="level-badge" id="level-badge">Level 1</span>
+                <span class="level-name" id="level-name">Offene Silben</span>
+            </div>
+            <div class="header-center">
+                <span class="score" id="score-display">0 Punkte</span>
+                <span class="streak" id="streak-display"></span>
+            </div>
+            <div class="header-right">
+                <button id="btn-puzzle" class="btn btn-icon" title="Puzzle anzeigen">
+                    <span class="puzzle-icon">&#129513;</span>
+                    <span id="puzzle-progress" class="puzzle-progress">0/9</span>
+                </button>
+                <button id="btn-home" class="btn btn-icon" title="Zurück zum Start">&#127968;</button>
+            </div>
+        </header>
+
+        <!-- Target Area -->
+        <div class="target-area">
+            <div class="target-prompt" id="target-prompt">
+                <span class="prompt-text">Klicke auf:</span>
+                <span class="target-syllable" id="target-syllable"></span>
+                <button id="btn-replay" class="btn btn-replay" title="Nochmal anhören">&#128264;</button>
+            </div>
+        </div>
+
+        <!-- Syllable Grid -->
+        <div class="syllable-grid" id="syllable-grid"></div>
+
+        <!-- Feedback Overlay -->
+        <div id="feedback-overlay" class="feedback-overlay"></div>
+
+        <!-- Level Up Overlay -->
+        <div id="levelup-overlay" class="levelup-overlay">
+            <div class="levelup-content">
+                <div class="levelup-star">&#11088;</div>
+                <h2 class="levelup-text" id="levelup-text">Super!</h2>
+                <p class="levelup-sub" id="levelup-sub">Nächstes Level!</p>
+            </div>
+        </div>
+
+        <!-- Confetti Canvas -->
+        <canvas id="confetti-canvas"></canvas>
+    </div>
+
+    <!-- Puzzle Screen -->
+    <div id="puzzle-screen" class="screen">
+        <header class="game-header">
+            <div class="header-left">
+                <button id="btn-back-game" class="btn btn-icon" title="Zurück zum Spiel">&#9664; Zurück</button>
+            </div>
+            <div class="header-center">
+                <h2>Meine Puzzles</h2>
+            </div>
+            <div class="header-right"></div>
+        </header>
+        <div class="puzzle-container" id="puzzle-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/syllables.js"></script>
+    <script src="js/levels.js"></script>
+    <script src="js/speech.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/puzzle.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>

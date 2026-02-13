@@ -1,0 +1,614 @@
+/* ============================================
+   Silbenteppich Lernspiel - Styles
+   ============================================ */
+
+/* Reset & Base */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --color-bg: #f0f4ff;
+    --color-primary: #6c5ce7;
+    --color-primary-light: #a29bfe;
+    --color-success: #00b894;
+    --color-success-light: #55efc4;
+    --color-error: #e17055;
+    --color-error-light: #fab1a0;
+    --color-warning: #fdcb6e;
+    --color-text: #2d3436;
+    --color-text-light: #636e72;
+    --color-white: #ffffff;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+    --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --border-radius: 16px;
+    --border-radius-sm: 10px;
+
+    /* Syllable tile colors */
+    --tile-1: #ff6b6b;
+    --tile-2: #feca57;
+    --tile-3: #48dbfb;
+    --tile-4: #ff9ff3;
+    --tile-5: #54a0ff;
+    --tile-6: #5f27cd;
+    --tile-7: #01a3a4;
+    --tile-8: #f368e0;
+    --tile-9: #ff6348;
+    --tile-10: #7bed9f;
+    --tile-11: #70a1ff;
+    --tile-12: #ffa502;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--color-bg);
+    color: var(--color-text);
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Screens */
+.screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   Start Screen
+   ============================================ */
+#start-screen {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    justify-content: center;
+    align-items: center;
+}
+
+.start-container {
+    text-align: center;
+    color: var(--color-white);
+}
+
+.game-title {
+    font-size: 4rem;
+    font-weight: 800;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+    margin-bottom: 0.5rem;
+    animation: bounceIn 0.8s ease-out;
+}
+
+.game-subtitle {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin-bottom: 2.5rem;
+}
+
+.start-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.start-stats {
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--border-radius);
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn {
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: var(--color-white);
+    color: var(--color-primary);
+    padding: 1rem 3rem;
+    font-size: 1.5rem;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--color-white);
+    padding: 0.8rem 2.5rem;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.btn-large {
+    min-width: 250px;
+}
+
+.btn-icon {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--color-text);
+    padding: 0.5rem 0.8rem;
+    font-size: 1.2rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.btn-replay {
+    background: var(--color-primary-light);
+    color: var(--color-white);
+    padding: 0.6rem 1rem;
+    font-size: 1.5rem;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(108, 92, 231, 0.3);
+}
+
+.btn-replay:hover {
+    background: var(--color-primary);
+}
+
+/* ============================================
+   Game Header
+   ============================================ */
+.game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1.5rem;
+    background: var(--color-white);
+    box-shadow: 0 2px 10px var(--color-shadow);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.header-left, .header-center, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.level-badge {
+    background: var(--color-primary);
+    color: var(--color-white);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.level-name {
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+}
+
+.score {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.streak {
+    font-size: 0.9rem;
+    color: var(--color-warning);
+    font-weight: 600;
+}
+
+.puzzle-icon {
+    font-size: 1.3rem;
+}
+
+.puzzle-progress {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* ============================================
+   Target Area
+   ============================================ */
+.target-area {
+    padding: 1.5rem;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.target-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.prompt-text {
+    font-size: 1.3rem;
+    color: var(--color-text-light);
+}
+
+.target-syllable {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    background: var(--color-white);
+    padding: 0.3rem 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 3px 15px rgba(108, 92, 231, 0.2);
+    letter-spacing: 2px;
+}
+
+/* Word mode: show syllables separated */
+.target-syllable .syllable-part {
+    display: inline;
+}
+
+.target-syllable .syllable-separator {
+    color: var(--color-text-light);
+    margin: 0 2px;
+}
+
+/* ============================================
+   Syllable Grid (Silbenteppich)
+   ============================================ */
+.syllable-grid {
+    flex: 1;
+    display: grid;
+    gap: 12px;
+    padding: 1rem 1.5rem 1.5rem;
+    align-content: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.syllable-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-white);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    min-width: 90px;
+    min-height: 70px;
+    padding: 0.5rem 1rem;
+}
+
+.syllable-tile:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.syllable-tile:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Tile colors */
+.syllable-tile.color-0 { background: var(--tile-1); }
+.syllable-tile.color-1 { background: var(--tile-2); color: var(--color-text); text-shadow: none; }
+.syllable-tile.color-2 { background: var(--tile-3); }
+.syllable-tile.color-3 { background: var(--tile-4); }
+.syllable-tile.color-4 { background: var(--tile-5); }
+.syllable-tile.color-5 { background: var(--tile-6); }
+.syllable-tile.color-6 { background: var(--tile-7); }
+.syllable-tile.color-7 { background: var(--tile-8); }
+.syllable-tile.color-8 { background: var(--tile-9); }
+.syllable-tile.color-9 { background: var(--tile-10); }
+.syllable-tile.color-10 { background: var(--tile-11); }
+.syllable-tile.color-11 { background: var(--tile-12); }
+
+/* Tile states */
+.syllable-tile.correct {
+    animation: tileCorrect 0.6s ease-out;
+    background: var(--color-success) !important;
+}
+
+.syllable-tile.wrong {
+    animation: tileWrong 0.5s ease-out;
+}
+
+.syllable-tile.selected {
+    outline: 4px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.syllable-tile.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* ============================================
+   Feedback Overlay
+   ============================================ */
+.feedback-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 1rem 2rem;
+    border-radius: var(--border-radius);
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.feedback-overlay.show {
+    opacity: 1;
+    animation: feedbackPop 0.5s ease-out;
+}
+
+.feedback-overlay.correct {
+    background: var(--color-success);
+    color: var(--color-white);
+}
+
+.feedback-overlay.wrong {
+    background: var(--color-error-light);
+    color: var(--color-white);
+}
+
+/* ============================================
+   Level Up Overlay
+   ============================================ */
+.levelup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.levelup-overlay.show {
+    display: flex;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.levelup-content {
+    text-align: center;
+    color: var(--color-white);
+    animation: levelUpBounce 0.6s ease-out;
+}
+
+.levelup-star {
+    font-size: 5rem;
+    animation: spinStar 1s ease-out;
+}
+
+.levelup-text {
+    font-size: 3rem;
+    margin: 1rem 0 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.levelup-sub {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+/* ============================================
+   Confetti Canvas
+   ============================================ */
+#confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 150;
+}
+
+/* ============================================
+   Puzzle Screen
+   ============================================ */
+.puzzle-container {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 2rem;
+    justify-content: center;
+    align-content: start;
+    overflow-y: auto;
+}
+
+.puzzle-card {
+    background: var(--color-white);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px var(--color-shadow);
+    width: 280px;
+    text-align: center;
+}
+
+.puzzle-card h3 {
+    margin-bottom: 1rem;
+    color: var(--color-primary);
+}
+
+.puzzle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    aspect-ratio: 1;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.puzzle-piece {
+    background: #dfe6e9;
+    aspect-ratio: 1;
+    transition: background 0.5s, opacity 0.5s;
+}
+
+.puzzle-piece.revealed {
+    opacity: 1;
+}
+
+.puzzle-piece.hidden {
+    opacity: 0.3;
+}
+
+.puzzle-complete-label {
+    color: var(--color-success);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes tileCorrect {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.2); }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+@keyframes tileWrong {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+}
+
+@keyframes feedbackPop {
+    0% { transform: translate(-50%, -50%) scale(0.5); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes levelUpBounce {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
+@keyframes spinStar {
+    0% { transform: rotate(0deg) scale(0); }
+    50% { transform: rotate(180deg) scale(1.3); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes puzzlePieceReveal {
+    0% { transform: scale(0) rotate(180deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 2.8rem;
+    }
+
+    .game-subtitle {
+        font-size: 1.2rem;
+    }
+
+    .target-syllable {
+        font-size: 2rem;
+    }
+
+    .syllable-tile {
+        font-size: 1.4rem;
+        min-width: 70px;
+        min-height: 55px;
+    }
+
+    .game-header {
+        padding: 0.5rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .level-name {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 2.2rem;
+    }
+
+    .syllable-tile {
+        font-size: 1.2rem;
+        min-width: 60px;
+        min-height: 45px;
+    }
+
+    .syllable-grid {
+        gap: 8px;
+        padding: 0.5rem 1rem 1rem;
+    }
+
+    .target-area {
+        padding: 1rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .syllable-tile {
+        font-size: 2.2rem;
+        min-width: 120px;
+        min-height: 90px;
+    }
+}
