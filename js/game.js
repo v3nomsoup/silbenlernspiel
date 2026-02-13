@@ -13,6 +13,11 @@ const Game = (() => {
     let isProcessing = false;       // Prevent double-clicks
     let gridTiles = [];
 
+    // Session-level tracking: prevent word/syllable repetition
+    let usedTargets = new Set();       // Targets already shown this session (per level)
+    let retriedTargets = new Set();    // Targets retried after error (only 1 retry allowed)
+    let currentLevelForTracking = 0;   // Reset tracking on level change
+
     // DOM Elements
     const screens = {
         start: document.getElementById('start-screen'),
@@ -105,6 +110,11 @@ const Game = (() => {
         } else {
             state = Storage.load();
         }
+        // Reset session tracking
+        usedTargets.clear();
+        retriedTargets.clear();
+        currentLevelForTracking = state.currentLevel;
+
         showScreen('game');
         updateUI();
         nextRound();
@@ -134,6 +144,14 @@ const Game = (() => {
     function nextRound() {
         isProcessing = false;
         const level = getLevelConfig(state.currentLevel);
+
+        // Reset session tracking when level changes
+        if (state.currentLevel !== currentLevelForTracking) {
+            usedTargets.clear();
+            retriedTargets.clear();
+            currentLevelForTracking = state.currentLevel;
+        }
+
         const syllables = getSyllablesForLevel(level);
 
         if (level.type === 'word') {
@@ -148,15 +166,28 @@ const Game = (() => {
     function setupSyllableRound(level, allSyllables) {
         const gridSize = level.gridCols * level.gridRows;
 
+        // Filter out already-used syllables (unless all have been used)
+        let available = allSyllables.filter(s => !usedTargets.has(s.toLowerCase()));
+        if (available.length === 0) {
+            usedTargets.clear();
+            retriedTargets.clear();
+            available = allSyllables;
+        }
+
         // Pick random syllables for the grid, weighting difficult ones
         const selected = pickSyllables(allSyllables, gridSize, state.difficultSyllables);
 
-        // Pick the target
-        const targetIdx = Math.floor(Math.random() * selected.length);
-        currentTarget = selected[targetIdx];
+        // Pick the target from available (unused) syllables that are in the grid
+        const availableInGrid = selected.filter(s => !usedTargets.has(s.toLowerCase()));
+        const targetPool = availableInGrid.length > 0 ? availableInGrid : selected;
+        const targetIdx = Math.floor(Math.random() * targetPool.length);
+        currentTarget = targetPool[targetIdx];
         currentTargetDisplay = currentTarget;
         currentWordSyllables = [];
         nextSyllableIndex = 0;
+
+        // Mark as used
+        usedTargets.add(currentTarget.toLowerCase());
 
         // Display target
         el.targetSyllable.textContent = currentTarget;
@@ -171,8 +202,19 @@ const Game = (() => {
     function setupWordRound(level, wordList) {
         const gridSize = level.gridCols * level.gridRows;
 
-        // Pick a random word
-        const wordObj = wordList[Math.floor(Math.random() * wordList.length)];
+        // Filter out already-used words (unless all have been used)
+        let available = wordList.filter(w => !usedTargets.has(w.word.toLowerCase()));
+        if (available.length === 0) {
+            usedTargets.clear();
+            retriedTargets.clear();
+            available = wordList;
+        }
+
+        // Pick a random word from available
+        const wordObj = available[Math.floor(Math.random() * available.length)];
+
+        // Mark as used
+        usedTargets.add(wordObj.word.toLowerCase());
         currentTarget = wordObj.word;
         currentWordSyllables = wordObj.syllables;
         nextSyllableIndex = 0;
@@ -448,6 +490,12 @@ const Game = (() => {
         if (state.errorStreak >= level.errorsToRegress && state.currentLevel > 1) {
             showLevelDown();
         } else {
+            // Allow one retry: re-add to available targets if not already retried
+            const targetKey = currentTarget.toLowerCase();
+            if (!retriedTargets.has(targetKey)) {
+                retriedTargets.add(targetKey);
+                usedTargets.delete(targetKey);
+            }
             // Re-speak the target so the child can try again
             await Speech.speakSyllable(currentTarget);
             isProcessing = false;
@@ -501,14 +549,19 @@ const Game = (() => {
     // ==========================================
     function checkPuzzlePiece() {
         // Award puzzle piece when streak reaches threshold (5 in a row)
-        // Returns true if a piece was awarded (so caller can announce it)
         if (state.correctStreak > 0 && state.correctStreak % Puzzle.STREAK_FOR_PIECE === 0) {
             state.puzzlePieces++;
+
+            // Generate shuffle order when earning the first piece of a new puzzle
+            if (state.puzzlePieces === 1 && !state.puzzleShuffleOrder) {
+                state.puzzleShuffleOrder = Puzzle.getShuffledPositions(Puzzle.PIECES_PER_PUZZLE);
+            }
 
             if (state.puzzlePieces >= Puzzle.PIECES_PER_PUZZLE) {
                 state.completedPuzzles.push(state.currentPuzzleIndex);
                 state.currentPuzzleIndex++;
                 state.puzzlePieces = 0;
+                state.puzzleShuffleOrder = null;
                 return 'complete';
             }
             return 'piece';
