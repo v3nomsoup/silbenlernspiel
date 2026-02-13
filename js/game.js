@@ -323,10 +323,9 @@ const Game = (() => {
     // ==========================================
     function renderGrid(syllables, cols) {
         el.syllableGrid.innerHTML = '';
-        // In portrait mode, swap cols/rows for better space usage
+        // In portrait mode, use 2 columns for better vertical space usage
         const isPortrait = window.innerHeight > window.innerWidth;
-        const rows = Math.ceil(syllables.length / cols);
-        const effectiveCols = isPortrait && rows < cols ? rows : cols;
+        const effectiveCols = isPortrait ? 2 : cols;
         el.syllableGrid.style.gridTemplateColumns = `repeat(${effectiveCols}, 1fr)`;
         gridTiles = [];
 
