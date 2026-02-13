@@ -13,6 +13,7 @@ const Speech = (() => {
         if (typeof AudioStore !== 'undefined') {
             try {
                 await AudioStore.init();
+                await AudioStore.loadPrerecorded();
                 audioStoreReady = true;
             } catch (e) {
                 console.warn('AudioStore init fehlgeschlagen:', e);

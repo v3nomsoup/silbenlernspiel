@@ -23,11 +23,31 @@
         }
         .header h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
         .header p { opacity: 0.9; font-size: 0.9rem; }
-        .total-progress {
+        .header-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
             margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .total-progress {
             font-size: 0.85rem;
             opacity: 0.9;
         }
+        .btn-export {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.4);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-export:hover { background: rgba(255,255,255,0.3); }
+        .btn-export:disabled { opacity: 0.4; cursor: default; }
 
         /* Tabs */
         .tabs {
@@ -83,7 +103,7 @@
         .item-btn:hover { border-color: #a29bfe; transform: translateY(-1px); }
         .item-btn.recorded { border-color: #00b894; background: #f0fff4; }
         .item-btn.recorded::after {
-            content: '✓';
+            content: '\2713';
             position: absolute;
             top: 2px;
             right: 5px;
@@ -208,7 +228,10 @@
     <div class="header">
         <h1>Aufnahme-Tool</h1>
         <p>Silben und Wörter einsprechen</p>
-        <div class="total-progress" id="total-progress"></div>
+        <div class="header-row">
+            <span class="total-progress" id="total-progress"></span>
+            <button class="btn-export" id="btn-export">Exportieren</button>
+        </div>
     </div>
 
     <div class="tabs" id="tabs"></div>
@@ -268,9 +291,7 @@
         function buildWordItems(wordList) {
             const items = [];
             for (const w of wordList) {
-                // The whole word
                 items.push({ key: w.word, display: w.word, type: 'word', syllables: w.syllables });
-                // Individual syllables (only if unique within this list)
                 for (const syl of w.syllables) {
                     if (!items.some(it => it.key.toLowerCase() === syl.toLowerCase() && it.type === 'syllable')) {
                         items.push({ key: syl, display: syl, type: 'syllable' });
@@ -284,6 +305,7 @@
         let activeItemKey = null;
         let isRecording = false;
         let mediaRecorder = null;
+        let micStream = null;      // Reusable mic stream
         let recordedChunks = [];
         let recordedKeys = new Set();
 
@@ -295,10 +317,18 @@
         const btnPlay = document.getElementById('btn-play');
         const btnDelete = document.getElementById('btn-delete');
         const btnNext = document.getElementById('btn-next');
+        const btnExport = document.getElementById('btn-export');
         const totalProgressEl = document.getElementById('total-progress');
 
         // Load existing keys
         recordedKeys = await AudioStore.getAllKeys();
+
+        // ---- Mic stream: request once, reuse ----
+        async function getMicStream() {
+            if (micStream && micStream.active) return micStream;
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            return micStream;
+        }
 
         // Render tabs
         function renderTabs() {
@@ -323,19 +353,14 @@
 
         function getUniqueKeys(cat) {
             const keys = new Set();
-            for (const item of cat.items) {
-                keys.add(item.key.toLowerCase());
-            }
+            for (const item of cat.items) keys.add(item.key.toLowerCase());
             return [...keys];
         }
 
         function getAllUniqueKeys() {
             const keys = new Set();
-            for (const cat of categories) {
-                for (const item of cat.items) {
-                    keys.add(item.key.toLowerCase());
-                }
-            }
+            for (const cat of categories)
+                for (const item of cat.items) keys.add(item.key.toLowerCase());
             return keys;
         }
 
@@ -343,19 +368,16 @@
             const all = getAllUniqueKeys();
             const recorded = [...all].filter(k => recordedKeys.has(k)).length;
             totalProgressEl.textContent = `Gesamt: ${recorded}/${all.size} aufgenommen`;
+            btnExport.disabled = recorded === 0;
         }
 
         // Render items
         function renderItems() {
             gridEl.innerHTML = '';
             const cat = categories[activeCategory];
-
             for (const item of cat.items) {
-                if (item.type === 'word') {
-                    renderWordItem(item);
-                } else {
-                    renderSyllableItem(item);
-                }
+                if (item.type === 'word') renderWordItem(item);
+                else renderSyllableItem(item);
             }
         }
 
@@ -397,7 +419,6 @@
                 sylDiv.appendChild(badge);
             }
             div.appendChild(sylDiv);
-
             gridEl.appendChild(div);
         }
 
@@ -425,14 +446,13 @@
         async function startRecording() {
             if (!activeItemKey) return;
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const stream = await getMicStream();
                 recordedChunks = [];
                 mediaRecorder = new MediaRecorder(stream);
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) recordedChunks.push(e.data);
                 };
                 mediaRecorder.onstop = async () => {
-                    stream.getTracks().forEach(t => t.stop());
                     const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
                     await AudioStore.save(activeItemKey, blob);
                     recordedKeys.add(activeItemKey.toLowerCase());
@@ -444,7 +464,7 @@
                 mediaRecorder.start();
                 isRecording = true;
                 btnRecord.classList.add('recording');
-                btnRecord.innerHTML = '&#9632;'; // Stop symbol
+                btnRecord.innerHTML = '&#9632;';
             } catch (err) {
                 alert('Mikrofon-Zugriff nicht möglich: ' + err.message);
             }
@@ -456,7 +476,7 @@
             }
             isRecording = false;
             btnRecord.classList.remove('recording');
-            btnRecord.innerHTML = '&#9679;'; // Record symbol
+            btnRecord.innerHTML = '&#9679;';
         }
 
         // Playback
@@ -484,25 +504,20 @@
         function goNext() {
             const cat = categories[activeCategory];
             const allItems = cat.items;
-
-            // Find current index
             let currentIdx = allItems.findIndex(it => it.key === activeItemKey);
             if (currentIdx === -1) currentIdx = -1;
 
-            // Search forward for next unrecorded
             for (let i = 1; i <= allItems.length; i++) {
                 const idx = (currentIdx + i) % allItems.length;
                 const item = allItems[idx];
                 if (!recordedKeys.has(item.key.toLowerCase())) {
                     selectItem(item.key, item.display);
-                    // Scroll into view
                     const el = gridEl.children[idx];
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
                 }
             }
 
-            // All recorded in this category — try next category
             for (let c = 1; c <= categories.length; c++) {
                 const nextCat = (activeCategory + c) % categories.length;
                 const nextItems = categories[nextCat].items;
@@ -516,7 +531,56 @@
                 }
             }
 
-            alert('Alles aufgenommen! 🎉');
+            alert('Alles aufgenommen!');
+        }
+
+        // ---- Export: save all recordings as JSON with base64 audio ----
+        btnExport.addEventListener('click', exportRecordings);
+
+        async function exportRecordings() {
+            btnExport.disabled = true;
+            btnExport.textContent = 'Exportiere...';
+
+            try {
+                const keys = await AudioStore.getAllKeys();
+                const data = {};
+
+                for (const key of keys) {
+                    const blob = await AudioStore.get(key);
+                    if (blob) {
+                        const base64 = await blobToBase64(blob);
+                        data[key] = { type: blob.type, data: base64 };
+                    }
+                }
+
+                const json = JSON.stringify(data);
+                const file = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'recordings.json';
+                a.click();
+                URL.revokeObjectURL(url);
+
+                alert(`${Object.keys(data).length} Aufnahmen exportiert.\n\nSpeichere die Datei als:\naudio/recordings.json\n\nim Spielverzeichnis und commite sie.`);
+            } catch (err) {
+                alert('Export fehlgeschlagen: ' + err.message);
+            }
+
+            btnExport.disabled = false;
+            btnExport.textContent = 'Exportieren';
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    // Strip "data:...;base64," prefix
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.readAsDataURL(blob);
+            });
         }
 
         // Keyboard shortcuts
