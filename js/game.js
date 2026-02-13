@@ -250,8 +250,8 @@ const Game = (() => {
 
         renderGrid(allTiles, level.gridCols);
 
-        // Speak the word
-        Speech.speakWordWithSyllables(wordObj.word, wordObj.syllables);
+        // Speak only the whole word (syllables only on replay button)
+        Speech.speakWord(wordObj.word);
     }
 
     function allSyllablesForDistraction(level) {
