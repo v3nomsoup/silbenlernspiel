@@ -303,14 +303,15 @@ const Game = (() => {
         }
     }
 
-    function handleSyllableClick(tile, clickedSyllable) {
+    async function handleSyllableClick(tile, clickedSyllable) {
         isProcessing = true;
 
-        // Read the clicked syllable aloud
-        Speech.speakSyllable(clickedSyllable);
+        // 1. Read the clicked syllable aloud and wait
+        await Speech.speakSyllable(clickedSyllable);
+        await new Promise(r => setTimeout(r, 300));
 
+        // 2. Then show feedback
         const isCorrect = clickedSyllable.toLowerCase() === currentTarget.toLowerCase();
-
         if (isCorrect) {
             onCorrectAnswer(tile);
         } else {
@@ -318,12 +319,12 @@ const Game = (() => {
         }
     }
 
-    function handleWordClick(tile, clickedSyllable) {
+    async function handleWordClick(tile, clickedSyllable) {
         const expectedSyllable = currentWordSyllables[nextSyllableIndex];
         const isCorrect = clickedSyllable.toLowerCase() === expectedSyllable.toLowerCase();
 
-        // Read the clicked syllable aloud
-        Speech.speakSyllable(clickedSyllable);
+        // 1. Read the clicked syllable aloud and wait
+        await Speech.speakSyllable(clickedSyllable);
 
         if (isCorrect) {
             tile.classList.add('correct', 'disabled');
@@ -338,12 +339,14 @@ const Game = (() => {
             nextSyllableIndex++;
 
             if (nextSyllableIndex >= currentWordSyllables.length) {
-                // All syllables found!
+                // All syllables found - pause then feedback
                 isProcessing = true;
+                await new Promise(r => setTimeout(r, 300));
                 onCorrectAnswer(tile);
             }
         } else {
             isProcessing = true;
+            await new Promise(r => setTimeout(r, 300));
             onWrongAnswer(tile, clickedSyllable);
         }
     }
