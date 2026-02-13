@@ -372,6 +372,8 @@ const Game = (() => {
     }
 
     async function handleWordClick(tile, clickedSyllable) {
+        isProcessing = true;
+
         const expectedSyllable = currentWordSyllables[nextSyllableIndex];
         const isCorrect = clickedSyllable.toLowerCase() === expectedSyllable.toLowerCase();
 
@@ -392,12 +394,13 @@ const Game = (() => {
 
             if (nextSyllableIndex >= currentWordSyllables.length) {
                 // All syllables found - pause then feedback
-                isProcessing = true;
                 await new Promise(r => setTimeout(r, 300));
                 onCorrectAnswer(tile);
+            } else {
+                // Ready for next syllable click
+                isProcessing = false;
             }
         } else {
-            isProcessing = true;
             await new Promise(r => setTimeout(r, 300));
             onWrongAnswer(tile, clickedSyllable);
         }
