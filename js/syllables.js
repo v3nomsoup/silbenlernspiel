@@ -111,23 +111,23 @@ const SYLLABLE_DATA = {
         { word: 'Lokomotive', syllables: ['Lo', 'ko', 'mo', 'ti', 've'] },
     ],
 
-    // Ermutigende Nachrichten
+    // Ermutigende Nachrichten: { text: Anzeige, speech: vorgelesen }
     encourageMessages: [
-        'Super gemacht! ⭐',
-        'Toll! Weiter so! 🌟',
-        'Richtig! Du bist klasse! 🎉',
-        'Genau! 👏',
-        'Perfekt! 💪',
-        'Wow, das war schnell! 🚀',
-        'Du kannst das! 😊',
-        'Fantastisch! 🌈',
+        { text: 'Super gemacht! ⭐', speech: 'Super gemacht!' },
+        { text: 'Toll! Weiter so! 🌟', speech: 'Toll! Weiter so!' },
+        { text: 'Richtig! Du bist klasse! 🎉', speech: 'Richtig! Du bist klasse!' },
+        { text: 'Genau! 👏', speech: 'Genau!' },
+        { text: 'Perfekt! 💪', speech: 'Perfekt!' },
+        { text: 'Wow, das war schnell! 🚀', speech: 'Wow, das war schnell!' },
+        { text: 'Du kannst das! 😊', speech: 'Du kannst das!' },
+        { text: 'Fantastisch! 🌈', speech: 'Fantastisch!' },
     ],
 
     // Trost-Nachrichten bei Fehlern
     comfortMessages: [
-        'Fast! Versuch es nochmal! 💪',
-        'Nicht schlimm, nächstes Mal! 😊',
-        'Hör nochmal genau hin! 👂',
-        'Du schaffst das! 🌟',
+        { text: 'Fast! Versuch es nochmal! 💪', speech: 'Fast! Versuch es nochmal!' },
+        { text: 'Nicht schlimm, nächstes Mal! 😊', speech: 'Nicht schlimm, nächstes Mal!' },
+        { text: 'Hör nochmal genau hin! 👂', speech: 'Hör nochmal genau hin!' },
+        { text: 'Du schaffst das! 🌟', speech: 'Du schaffst das!' },
     ],
 };

@@ -375,10 +375,11 @@ const Game = (() => {
         state.correctSinceLastPuzzle++;
 
         // Show feedback
-        const msg = SYLLABLE_DATA.encourageMessages[
+        const msgObj = SYLLABLE_DATA.encourageMessages[
             Math.floor(Math.random() * SYLLABLE_DATA.encourageMessages.length)
         ];
-        showFeedback(msg, 'correct');
+        showFeedback(msgObj.text, 'correct');
+        Speech.speakFeedback(msgObj.speech);
 
         // Confetti on streaks
         if (state.correctStreak >= 3) {
@@ -414,10 +415,11 @@ const Game = (() => {
         state.totalRounds++;
 
         // Show comfort message
-        const msg = SYLLABLE_DATA.comfortMessages[
+        const msgObj = SYLLABLE_DATA.comfortMessages[
             Math.floor(Math.random() * SYLLABLE_DATA.comfortMessages.length)
         ];
-        showFeedback(msg, 'wrong');
+        showFeedback(msgObj.text, 'wrong');
+        Speech.speakFeedback(msgObj.speech);
 
         updateUI();
         Storage.save(state);
