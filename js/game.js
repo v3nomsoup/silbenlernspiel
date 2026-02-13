@@ -305,6 +305,10 @@ const Game = (() => {
 
     function handleSyllableClick(tile, clickedSyllable) {
         isProcessing = true;
+
+        // Read the clicked syllable aloud
+        Speech.speakSyllable(clickedSyllable);
+
         const isCorrect = clickedSyllable.toLowerCase() === currentTarget.toLowerCase();
 
         if (isCorrect) {
@@ -317,6 +321,9 @@ const Game = (() => {
     function handleWordClick(tile, clickedSyllable) {
         const expectedSyllable = currentWordSyllables[nextSyllableIndex];
         const isCorrect = clickedSyllable.toLowerCase() === expectedSyllable.toLowerCase();
+
+        // Read the clicked syllable aloud
+        Speech.speakSyllable(clickedSyllable);
 
         if (isCorrect) {
             tile.classList.add('correct', 'disabled');
