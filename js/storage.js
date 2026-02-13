@@ -17,6 +17,7 @@ const Storage = (() => {
         completedPuzzles: [],    // Array of completed puzzle indices
         currentPuzzleIndex: 0,
         puzzleShuffleOrder: null, // Shuffled positions for current puzzle pieces
+        puzzleOrder: null,       // Randomized order of puzzle images
         difficultSyllables: {},  // { syllable: errorCount }
     };
 

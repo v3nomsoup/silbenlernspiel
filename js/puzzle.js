@@ -9,10 +9,10 @@ const Puzzle = (() => {
     // Quadrant offsets: translate the 200%-sized SVG to show the right portion
     // Each piece shows a quarter of the image
     const QUADRANTS = [
-        { tx: '0',    ty: '0',    label: 'oben links'   },  // top-left
-        { tx: '-100%', ty: '0',    label: 'oben rechts'  },  // top-right
-        { tx: '0',    ty: '-100%', label: 'unten links'  },  // bottom-left
-        { tx: '-100%', ty: '-100%', label: 'unten rechts' },  // bottom-right
+        { tx: '0',   ty: '0',   label: 'oben links'   },  // top-left
+        { tx: '-50%', ty: '0',   label: 'oben rechts'  },  // top-right
+        { tx: '0',   ty: '-50%', label: 'unten links'  },  // bottom-left
+        { tx: '-50%', ty: '-50%', label: 'unten rechts' },  // bottom-right
     ];
 
     const PUZZLES = [
@@ -241,6 +241,19 @@ const Puzzle = (() => {
         }
     }
 
+    // Generate a randomized order for which puzzle images to show
+    function generatePuzzleOrder() {
+        return getShuffledPositions(PUZZLES.length);
+    }
+
+    // Map sequential puzzle index → actual image index via puzzleOrder
+    function getPuzzleImageIndex(seqIndex, puzzleOrder) {
+        if (puzzleOrder && seqIndex < puzzleOrder.length) {
+            return puzzleOrder[seqIndex];
+        }
+        return seqIndex % PUZZLES.length;
+    }
+
     function renderAllPuzzles(container, gameState) {
         container.innerHTML = '';
 
@@ -259,7 +272,8 @@ const Puzzle = (() => {
                 ? gameState.puzzleShuffleOrder
                 : getShuffledPositions(PIECES_PER_PUZZLE);
 
-            renderPuzzleGrid(card, i, pieces, order);
+            const imageIdx = getPuzzleImageIndex(i, gameState.puzzleOrder);
+            renderPuzzleGrid(card, imageIdx, pieces, order);
             container.appendChild(card);
         }
 
@@ -274,6 +288,7 @@ const Puzzle = (() => {
         getPuzzleCount,
         getPuzzle,
         getShuffledPositions,
+        generatePuzzleOrder,
         renderPuzzleGrid,
         renderAllPuzzles,
     };

@@ -110,6 +110,13 @@ const Game = (() => {
         } else {
             state = Storage.load();
         }
+
+        // Initialize random puzzle order if not set
+        if (!state.puzzleOrder) {
+            state.puzzleOrder = Puzzle.generatePuzzleOrder();
+            Storage.save(state);
+        }
+
         // Reset session tracking
         usedTargets.clear();
         retriedTargets.clear();
