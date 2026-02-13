@@ -4,7 +4,7 @@
 
 const Puzzle = (() => {
     const PIECES_PER_PUZZLE = 9;
-    const CORRECT_PER_PIECE = 10;
+    const STREAK_FOR_PIECE = 5; // 5 correct in a row = 1 puzzle piece
 
     // Puzzle images as SVG inline data (simple colorful images)
     const PUZZLES = [
@@ -241,7 +241,7 @@ const Puzzle = (() => {
 
     return {
         PIECES_PER_PUZZLE,
-        CORRECT_PER_PIECE,
+        STREAK_FOR_PIECE,
         getPuzzleCount,
         getPuzzle,
         renderPuzzleGrid,

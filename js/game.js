@@ -372,7 +372,6 @@ const Game = (() => {
         state.totalScore += points;
         state.totalCorrect++;
         state.totalRounds++;
-        state.correctSinceLastPuzzle++;
 
         // Show feedback
         const msgObj = SYLLABLE_DATA.encourageMessages[
@@ -485,8 +484,8 @@ const Game = (() => {
     // Puzzle Pieces
     // ==========================================
     function checkPuzzlePiece() {
-        if (state.correctSinceLastPuzzle >= Puzzle.CORRECT_PER_PIECE) {
-            state.correctSinceLastPuzzle = 0;
+        // Award puzzle piece when streak reaches threshold (5 in a row)
+        if (state.correctStreak > 0 && state.correctStreak % Puzzle.STREAK_FOR_PIECE === 0) {
             state.puzzlePieces++;
 
             if (state.puzzlePieces >= Puzzle.PIECES_PER_PUZZLE) {
@@ -494,6 +493,9 @@ const Game = (() => {
                 state.completedPuzzles.push(state.currentPuzzleIndex);
                 state.currentPuzzleIndex++;
                 state.puzzlePieces = 0;
+                Speech.speakFeedback('Puzzle fertig! Toll gemacht!');
+            } else {
+                Speech.speakFeedback('Neues Puzzleteil!');
             }
         }
     }

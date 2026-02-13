@@ -17,7 +17,6 @@ const Storage = (() => {
         completedPuzzles: [],    // Array of completed puzzle indices
         currentPuzzleIndex: 0,
         difficultSyllables: {},  // { syllable: errorCount }
-        correctSinceLastPuzzle: 0,
     };
 
     function load() {
