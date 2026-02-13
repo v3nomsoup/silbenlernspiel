@@ -18,14 +18,8 @@ const Speech = (() => {
                 const voices = speechSynthesis.getVoices();
                 const deVoices = voices.filter(v => v.lang === 'de-DE' || v.lang === 'de_DE' || v.lang.startsWith('de'));
 
-                // Log available German voices for debugging
                 console.log('Verfügbare deutsche Stimmen:', deVoices.map(v => `${v.name} (${v.lang}, local=${v.localService})`));
 
-                // Priority order for best German pronunciation:
-                // 1. macOS premium/enhanced voices (Petra, Yannick, Anna Premium)
-                // 2. Local (non-network) German voices - better pronunciation
-                // 3. Any de-DE voice that is NOT Google (Google voices have English accent)
-                // 4. Any German voice as fallback
                 germanVoice =
                     deVoices.find(v => /petra|yannick|markus/i.test(v.name)) ||
                     deVoices.find(v => /premium|enhanced|natural/i.test(v.name)) ||
@@ -65,59 +59,62 @@ const Speech = (() => {
         });
     }
 
+    function _createUtterance(text, rate) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'de-DE';
+        utterance.rate = rate;
+        utterance.pitch = 1.05;
+        utterance.volume = 1.0;
+        if (germanVoice) {
+            utterance.voice = germanVoice;
+        }
+        return utterance;
+    }
+
+    // Speak text, cancelling anything currently playing
     function speak(text, rate = 0.85) {
         return new Promise((resolve) => {
-            if (!window.speechSynthesis) {
-                resolve();
-                return;
-            }
-
-            // Cancel any ongoing speech
+            if (!window.speechSynthesis) { resolve(); return; }
             speechSynthesis.cancel();
-
-            // Small delay after cancel to avoid Chrome bug
             setTimeout(() => {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'de-DE';
-                utterance.rate = rate;
-                utterance.pitch = 1.05;
-                utterance.volume = 1.0;
-
-                if (germanVoice) {
-                    utterance.voice = germanVoice;
-                }
-
-                utterance.onend = () => resolve();
-                utterance.onerror = () => resolve();
-
-                speechSynthesis.speak(utterance);
+                const utt = _createUtterance(text, rate);
+                utt.onend = () => resolve();
+                utt.onerror = () => resolve();
+                speechSynthesis.speak(utt);
             }, 50);
         });
     }
 
-    // Speak without cancelling current speech (for queuing)
-    function speakQueued(text, rate = 0.85) {
+    // Wait for any current speech to finish, then speak
+    function speakAfterCurrent(text, rate = 0.85) {
         return new Promise((resolve) => {
-            if (!window.speechSynthesis) {
-                resolve();
-                return;
+            if (!window.speechSynthesis) { resolve(); return; }
+
+            function go() {
+                const utt = _createUtterance(text, rate);
+                utt.onend = () => resolve();
+                utt.onerror = () => resolve();
+                speechSynthesis.speak(utt);
             }
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'de-DE';
-            utterance.rate = rate;
-            utterance.pitch = 1.05;
-            utterance.volume = 1.0;
-
-            if (germanVoice) {
-                utterance.voice = germanVoice;
+            if (speechSynthesis.speaking) {
+                // Poll until current speech is done
+                const check = setInterval(() => {
+                    if (!speechSynthesis.speaking) {
+                        clearInterval(check);
+                        setTimeout(go, 80);
+                    }
+                }, 50);
+            } else {
+                go();
             }
-
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve();
-
-            speechSynthesis.speak(utterance);
         });
+    }
+
+    function cancel() {
+        if (window.speechSynthesis) {
+            speechSynthesis.cancel();
+        }
     }
 
     function speakSyllable(syllable) {
@@ -132,13 +129,14 @@ const Speech = (() => {
         await speak(word, 0.7);
         await new Promise(r => setTimeout(r, 500));
         for (const syl of syllables) {
-            await speak(syl, 0.65);
+            await speakAfterCurrent(syl, 0.65);
             await new Promise(r => setTimeout(r, 300));
         }
     }
 
+    // Speak feedback - waits for current syllable speech to finish first
     function speakFeedback(text) {
-        return speak(text, 0.95);
+        return speakAfterCurrent(text, 0.95);
     }
 
     function speakPrompt(targetText) {
@@ -153,5 +151,5 @@ const Speech = (() => {
         return germanVoice ? germanVoice.name : 'Standard';
     }
 
-    return { init, speak, speakQueued, speakSyllable, speakWord, speakWordWithSyllables, speakFeedback, speakPrompt, isReady, getVoiceName };
+    return { init, speak, speakAfterCurrent, cancel, speakSyllable, speakWord, speakWordWithSyllables, speakFeedback, speakPrompt, isReady, getVoiceName };
 })();

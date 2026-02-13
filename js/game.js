@@ -351,7 +351,7 @@ const Game = (() => {
     // ==========================================
     // Correct / Wrong Handling
     // ==========================================
-    function onCorrectAnswer(tile) {
+    async function onCorrectAnswer(tile) {
         tile.classList.add('correct');
         disableAllTiles();
 
@@ -373,34 +373,47 @@ const Game = (() => {
         state.totalCorrect++;
         state.totalRounds++;
 
-        // Show feedback
-        const msgObj = SYLLABLE_DATA.encourageMessages[
-            Math.floor(Math.random() * SYLLABLE_DATA.encourageMessages.length)
-        ];
-        showFeedback(msgObj.text, 'correct');
-        Speech.speakFeedback(msgObj.speech);
-
         // Confetti on streaks
         if (state.correctStreak >= 3) {
             launchConfetti();
         }
 
         // Check puzzle piece
-        checkPuzzlePiece();
+        const puzzleResult = checkPuzzlePiece();
 
         updateUI();
         Storage.save(state);
 
+        // Show feedback and WAIT for speech to finish
+        const msgObj = SYLLABLE_DATA.encourageMessages[
+            Math.floor(Math.random() * SYLLABLE_DATA.encourageMessages.length)
+        ];
+        showFeedback(msgObj.text, 'correct');
+        await Speech.speakFeedback(msgObj.speech);
+
+        // Announce puzzle piece if earned
+        if (puzzleResult === 'complete') {
+            showFeedback('Puzzle fertig! 🎉', 'correct');
+            await Speech.speakAfterCurrent('Puzzle fertig! Toll gemacht!');
+        } else if (puzzleResult === 'piece') {
+            showFeedback('Neues Puzzleteil! 🧩', 'correct');
+            await Speech.speakAfterCurrent('Neues Puzzleteil!');
+        }
+
+        // Small pause after speech so it feels natural
+        await new Promise(r => setTimeout(r, 400));
+        hideFeedback();
+
         // Check level up
         const level = getLevelConfig(state.currentLevel);
         if (state.correctStreak >= level.streakToAdvance && state.currentLevel < getMaxLevel()) {
-            setTimeout(() => showLevelUp(), 800);
+            showLevelUp();
         } else {
-            setTimeout(() => nextRound(), 1200);
+            nextRound();
         }
     }
 
-    function onWrongAnswer(tile, clickedSyllable) {
+    async function onWrongAnswer(tile, clickedSyllable) {
         tile.classList.add('wrong');
 
         // Track difficult syllable
@@ -413,33 +426,35 @@ const Game = (() => {
         state.totalWrong++;
         state.totalRounds++;
 
-        // Show comfort message
+        updateUI();
+        Storage.save(state);
+
+        // Show comfort message and WAIT for speech to finish
         const msgObj = SYLLABLE_DATA.comfortMessages[
             Math.floor(Math.random() * SYLLABLE_DATA.comfortMessages.length)
         ];
         showFeedback(msgObj.text, 'wrong');
-        Speech.speakFeedback(msgObj.speech);
+        await Speech.speakFeedback(msgObj.speech);
 
-        updateUI();
-        Storage.save(state);
+        // Small pause after speech
+        await new Promise(r => setTimeout(r, 400));
+        hideFeedback();
 
         // Check level down
         const level = getLevelConfig(state.currentLevel);
         if (state.errorStreak >= level.errorsToRegress && state.currentLevel > 1) {
-            setTimeout(() => showLevelDown(), 1000);
+            showLevelDown();
         } else {
-            // Re-speak the target
-            setTimeout(() => {
-                Speech.speakSyllable(currentTarget);
-                isProcessing = false;
-            }, 1200);
+            // Re-speak the target so the child can try again
+            await Speech.speakSyllable(currentTarget);
+            isProcessing = false;
         }
     }
 
     // ==========================================
     // Level Up / Down
     // ==========================================
-    function showLevelUp() {
+    async function showLevelUp() {
         state.currentLevel = Math.min(state.currentLevel + 1, getMaxLevel());
         state.correctStreak = 0;
         state.errorStreak = 0;
@@ -451,16 +466,15 @@ const Game = (() => {
         el.levelupOverlay.classList.add('show');
 
         launchConfetti();
-        Speech.speak('Super! Nächstes Level!');
+        await Speech.speak('Super! Nächstes Level!');
+        await new Promise(r => setTimeout(r, 800));
 
-        setTimeout(() => {
-            el.levelupOverlay.classList.remove('show');
-            updateUI();
-            nextRound();
-        }, 3000);
+        el.levelupOverlay.classList.remove('show');
+        updateUI();
+        nextRound();
     }
 
-    function showLevelDown() {
+    async function showLevelDown() {
         state.currentLevel = Math.max(state.currentLevel - 1, 1);
         state.correctStreak = 0;
         state.errorStreak = 0;
@@ -471,13 +485,12 @@ const Game = (() => {
         el.levelupSub.textContent = `Wir üben nochmal: ${level.name}`;
         el.levelupOverlay.classList.add('show');
 
-        Speech.speak('Kein Problem! Wir üben nochmal!');
+        await Speech.speak('Kein Problem! Wir üben nochmal!');
+        await new Promise(r => setTimeout(r, 800));
 
-        setTimeout(() => {
-            el.levelupOverlay.classList.remove('show');
-            updateUI();
-            nextRound();
-        }, 3000);
+        el.levelupOverlay.classList.remove('show');
+        updateUI();
+        nextRound();
     }
 
     // ==========================================
@@ -485,19 +498,19 @@ const Game = (() => {
     // ==========================================
     function checkPuzzlePiece() {
         // Award puzzle piece when streak reaches threshold (5 in a row)
+        // Returns true if a piece was awarded (so caller can announce it)
         if (state.correctStreak > 0 && state.correctStreak % Puzzle.STREAK_FOR_PIECE === 0) {
             state.puzzlePieces++;
 
             if (state.puzzlePieces >= Puzzle.PIECES_PER_PUZZLE) {
-                // Puzzle complete!
                 state.completedPuzzles.push(state.currentPuzzleIndex);
                 state.currentPuzzleIndex++;
                 state.puzzlePieces = 0;
-                Speech.speakFeedback('Puzzle fertig! Toll gemacht!');
-            } else {
-                Speech.speakFeedback('Neues Puzzleteil!');
+                return 'complete';
             }
+            return 'piece';
         }
+        return null;
     }
 
     // ==========================================
@@ -506,10 +519,10 @@ const Game = (() => {
     function showFeedback(text, type) {
         el.feedbackOverlay.textContent = text;
         el.feedbackOverlay.className = `feedback-overlay show ${type}`;
+    }
 
-        setTimeout(() => {
-            el.feedbackOverlay.className = 'feedback-overlay';
-        }, 1500);
+    function hideFeedback() {
+        el.feedbackOverlay.className = 'feedback-overlay';
     }
 
     function disableAllTiles() {
